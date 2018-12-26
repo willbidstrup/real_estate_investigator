@@ -1,0 +1,86 @@
+---
+title: "Importing and pre-processing real estate data"
+author: "Will Bidstrup"
+date: "26/12/2018"
+output: html_document
+---
+
+This is a working file to gather relevant real estate information from [[realestate.com.au](https://www.realestate.com.au/rent/).  
+
+The objective is to create a data frame that can be used for exploratory analysis.  
+
+Key variables to gather include;  
+
+- Price per week 
+- Number of bedrooms  
+- Postcode
+- NBN status
+
+
+```{r, message = FALSE}
+library(tidyverse) # For everything
+library(rvest) # For some prettier themes
+```
+
+# Scraping from the web
+
+The first step is to define search parameters on the website itself and run a search. In this example i am searching for 3 bedroom houses near Adelaide 5000 between 300 and 450 dollars per week.   
+
+```{r}
+url <- "https://www.realestate.com.au/rent/property-unitblock-villa-townhouse-unit+apartment-house-with-3-bedrooms-between-300-450-in-adelaide,+sa+5000/list-1"
+```
+
+```{r}
+# Read in the webpage
+webpage <- read_html(url)
+```
+
+
+# Applying the search across multiple pages  
+
+Section TBD
+
+# Collecting variables
+
+By using the SelectorGadget to understand the html structure I select the variables of interest. Most then require a few additional pre-processing steps before they can be put together in a data frame.   
+
+## Price per week
+
+```{r}
+# Pull from html
+price_data_html <- html_nodes(webpage,'.priceText')
+
+# Convert to text
+price_data <- html_text(price_data_html)
+
+# TODO - regex to strip to numeric only
+
+```
+
+
+## Number of bedrooms
+
+Beds, bathrooms and car spaces are all in the same field. I only care about beds to start with.  
+
+```{r}
+# Pull from html
+beds_data_html <- html_nodes(webpage,'dd')
+
+# Convert to text
+beds_data <- html_text(beds_data_html)
+
+# Split into beds, baths, cars
+beds <- as.integer(beds_data[seq(1, length(beds_data), 3)])
+bathrooms <- as.integer(beds_data[seq(2, length(beds_data), 3)])
+cars <- as.integer(beds_data[seq(3, length(beds_data), 3)]) # TODO Note - looks like one less - could be that this number does not exist in one of the listings?
+
+```
+
+
+
+## Postcode  
+
+## NBN status
+
+
+# Creating data frame
