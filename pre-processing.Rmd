@@ -20,6 +20,7 @@ Key variables to gather include;
 ```{r, message = FALSE}
 library(tidyverse) # For everything
 library(rvest) # For some prettier themes
+library(here)
 ```
 
 # Scraping from the web
@@ -37,14 +38,18 @@ webpage <- read_html(url)
 
 
 # Applying the search across multiple pages  
+```{r}
+# TODO - figure out how to do this with purr or similar
+```
 
-Section TBD
 
 # Collecting variables
 
 By using the SelectorGadget to understand the html structure I select the variables of interest. Most then require a few additional pre-processing steps before they can be put together in a data frame.   
 
 ## Price per week
+
+
 
 ```{r}
 # Pull from html
@@ -55,6 +60,26 @@ price_data <- html_text(price_data_html)
 
 # TODO - regex to strip to numeric only
 
+```
+
+Of course the numeric value of the rent price is mixed in as part of a character. Time for some Regex. I'm going to try using [this] (https://spannbaueradam.shinyapps.io/r_regex_tester/)
+
+```{r}
+# Example text for regex calculator
+head(price_data, 21)
+
+# To data frame
+price_data <- as.data.frame(price_data)
+
+# TODO - clean this up!!! Get ONLY the first three
+price_data$price_num <- substring(price_data$price_data, regexpr("[0-9]{3,}", price_data$price_data)) %>%
+  substr(1, 3)
+
+
+# Deal with non numeric
+price_data$price_num[price_data$price_num == "NEG"] <- NA
+
+price_data$price_num <- as.integer(price_data$price_num)
 ```
 
 
@@ -74,13 +99,127 @@ beds <- as.integer(beds_data[seq(1, length(beds_data), 3)])
 bathrooms <- as.integer(beds_data[seq(2, length(beds_data), 3)])
 cars <- as.integer(beds_data[seq(3, length(beds_data), 3)]) # TODO Note - looks like one less - could be that this number does not exist in one of the listings?
 
+
+beds <- as.data.frame(beds)
 ```
 
 
 
 ## Postcode  
 
+To get the postcode I need to take it from the address.  
+
+```{r}
+# Pull from html
+names_data_html <- html_nodes(webpage,'.name')
+
+# Convert to text
+names_data <- html_text(names_data_html)
+
+# Convert to dataframe (so string splitting can be performed on each element)
+names_data <- as.data.frame(names_data)
+
+# Separate
+names_data <- names_data %>%
+  separate(names_data, c("street", "suburb", "postcode"), sep = ",")
+
+# Separate again for postcode
+names_data <- names_data %>%
+  separate(postcode, c("state", "postcode"), sep = 3)
+
+# Remove state (not needed)
+names_data$state <- NULL
+
+# TODO - input missing postcodes (via lookup)
+
+```
+
 ## NBN status
 
+Very useful tutorial on getting info from PDF [here](https://medium.com/@CharlesBordet/how-to-extract-and-clean-data-from-pdf-files-in-r-da11964e252e). 
+
+```{r}
+# get text mining package
+install.packages("tm", repos="http://cran.rstudio.com/")
+library(tm)
+```
+
+```{r}
+read <- readPDF(control = list(text = "-layout"))
+document <- Corpus(URISource("data_reference/website-communities-table.pdf"), readerControl = list(reader = read))
+doc <- content(document[[1]])
+head(doc)
+```
+
+```{r}
+# Remove first line
+doc <- doc[-1]
+```
+
+```{r}
+# Convert to data frame
+doc <- as.data.frame(doc)
+
+# Remove first line
+doc <- doc[-1,]
+
+# Convert to data frame
+doc <- as.data.frame(doc)
+```
+
+```{r}
+# TODO - improve this regex wizardy to get postcode info and NBN service status - currently each page is a single row in the doc
+doc$postcode <- substring(doc$doc, regexpr("[0-9]{4,}", doc$doc)) %>%
+  substr(1, 4)
+
+head(doc)
+
+doc$nbn_status <- ifelse(grepl("Available",doc$doc), "YES", "NO")
+
+summary(as.factor(doc$nbn_status))
+```
+
+
+Some postcodes have NBN, others do not. Frustratingly, many are mixed.  
 
 # Creating data frame
+
+Today I will be satisfied with listing, bedrooms, postcode and price only.
+
+```{r}
+df <- names_data %>%
+  bind_cols(price_data) %>%
+  bind_cols(beds)
+```
+
+
+# Initial insights
+
+```{r}
+# Spread of prices for 3 bedroom near Adelaide
+summary(df$price_num)
+```
+
+
+# Features
+
+Calculate diff to London rent
+
+```{r}
+# AUD to GBP 0.56
+aud_gbp <- 0.56
+
+df$price_month <- df$price_num * 4
+
+df$price_month_gbp <- df$price_month * aud_gbp
+
+df$price_diff_abs <- 1735 - df$price_month_gbp
+
+df$price_diff_prop <- round(df$price_diff_abs / 1735, digits = 2)
+
+summary(df$price_diff_abs)
+
+summary(df$price_diff_prop)
+
+```
+
