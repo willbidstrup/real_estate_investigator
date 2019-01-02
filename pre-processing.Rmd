@@ -142,6 +142,10 @@ Very useful tutorial on getting info from PDF [here](https://medium.com/@Charles
 # get text mining package
 install.packages("tm", repos="http://cran.rstudio.com/")
 library(tm)
+
+# get pdf tools package
+install.packages("pdftools", repos="http://cran.rstudio.com/")
+library(pdftools)
 ```
 
 ```{r}
@@ -152,9 +156,36 @@ head(doc)
 ```
 
 ```{r}
-# Remove first line
-doc <- doc[-1]
+head(doc)
 ```
+
+### PDF Wrangle
+
+```{r}
+page_breaks <- grep("\\f", doc)
+doc[page_breaks[1]]
+```
+
+
+There are 245 pages with tabular info that needs to be wrestled into a useful format.  
+```{r}
+# Split by new lines
+doc_split <- strsplit(doc, "\n")
+doc_split[1]
+
+```
+
+I'm really only interested in two pieces of information in each line. The first is the postcode, the second is if the word 'Available' occurs. 
+
+Firstly need to split each list into a sublist
+
+```{r}
+# Test on one page
+
+doc_smaller_split <- strsplit(doc[2], "\n")
+```
+
+
 
 ```{r}
 # Convert to data frame
