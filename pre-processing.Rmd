@@ -19,7 +19,7 @@ Key variables to gather include;
 
 ```{r, message = FALSE}
 library(tidyverse) # For everything
-library(rvest) # For some prettier themes
+library(rvest) # For web scraping
 library(here)
 ```
 
@@ -136,42 +136,53 @@ names_data$state <- NULL
 
 ## NBN status
 
+I need to get the postcode and NBN status mapping from a PDF.  
+
+### The easy(ish) way
+
+I use the VERY EXCELLENT [Tabula](https://tabula.technology/) tool to extract the information in tabular format.    
+
+
+
+### The harder way 
+
+Tabula is amazing but still requires a manual intervention, I tried to get something happening more automaically with tm package but couldn't get it to work in a timely manner.  
+```{r}
+# TODO - figure this out
+```
+
+
 Very useful tutorial on getting info from PDF [here](https://medium.com/@CharlesBordet/how-to-extract-and-clean-data-from-pdf-files-in-r-da11964e252e). 
 
 ```{r}
-# get text mining package
-install.packages("tm", repos="http://cran.rstudio.com/")
-library(tm)
-
-# get pdf tools package
-install.packages("pdftools", repos="http://cran.rstudio.com/")
-library(pdftools)
-```
-
-```{r}
-read <- readPDF(control = list(text = "-layout"))
-document <- Corpus(URISource("data_reference/website-communities-table.pdf"), readerControl = list(reader = read))
-doc <- content(document[[1]])
-head(doc)
-```
+# # get text mining package
+# install.packages("tm", repos="http://cran.rstudio.com/")
+# library(tm)
+# 
+# # get pdf tools package
+# install.packages("pdftools", repos="http://cran.rstudio.com/")
+# library(pdftools)
+ ```
 
 ```{r}
-head(doc)
+# read <- readPDF(control = list(text = "-layout"))
+# document <- Corpus(URISource("data_reference/website-communities-table.pdf"), readerControl = list(reader = read))
+# doc <- content(document[[1]])
+# head(doc)
 ```
 
-### PDF Wrangle
+
 
 ```{r}
-page_breaks <- grep("\\f", doc)
-doc[page_breaks[1]]
+# page_breaks <- grep("\\f", doc)
+# doc[page_breaks[1]]
 ```
-
 
 There are 245 pages with tabular info that needs to be wrestled into a useful format.  
 ```{r}
-# Split by new lines
-doc_split <- strsplit(doc, "\n")
-doc_split[1]
+# # Split by new lines
+# doc_split <- strsplit(doc, "\n")
+# doc_split[1]
 
 ```
 
@@ -180,38 +191,33 @@ I'm really only interested in two pieces of information in each line. The first 
 Firstly need to split each list into a sublist
 
 ```{r}
-# Test on one page
-
-doc_smaller_split <- strsplit(doc[2], "\n")
+# # Test on one page
+# doc_smaller_split <- strsplit(doc[2], "\n")
 ```
 
-
-
 ```{r}
-# Convert to data frame
-doc <- as.data.frame(doc)
-
-# Remove first line
-doc <- doc[-1,]
-
-# Convert to data frame
-doc <- as.data.frame(doc)
+# # Convert to data frame
+# doc <- as.data.frame(doc)
+# 
+# # Remove first line
+# doc <- doc[-1,]
+# 
+# # Convert to data frame
+# doc <- as.data.frame(doc)
 ```
 
 ```{r}
 # TODO - improve this regex wizardy to get postcode info and NBN service status - currently each page is a single row in the doc
-doc$postcode <- substring(doc$doc, regexpr("[0-9]{4,}", doc$doc)) %>%
-  substr(1, 4)
-
-head(doc)
-
-doc$nbn_status <- ifelse(grepl("Available",doc$doc), "YES", "NO")
-
-summary(as.factor(doc$nbn_status))
+# doc$postcode <- substring(doc$doc, regexpr("[0-9]{4,}", doc$doc)) %>%
+#   substr(1, 4)
+# 
+# head(doc)
+# 
+# doc$nbn_status <- ifelse(grepl("Available",doc$doc), "YES", "NO")
+# 
+# summary(as.factor(doc$nbn_status))
 ```
 
-
-Some postcodes have NBN, others do not. Frustratingly, many are mixed.  
 
 # Creating data frame
 
