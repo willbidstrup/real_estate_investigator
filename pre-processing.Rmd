@@ -49,8 +49,6 @@ By using the SelectorGadget to understand the html structure I select the variab
 
 ## Price per week
 
-
-
 ```{r}
 # Pull from html
 price_data_html <- html_nodes(webpage,'.priceText')
@@ -142,19 +140,46 @@ I need to get the postcode and NBN status mapping from a PDF.
 
 I use the VERY EXCELLENT [Tabula](https://tabula.technology/) tool to extract the information in tabular format.    
 
+```{r}
+nbn_data <- read_csv("data_reference/nbn_postcodes.csv")
+glimpse(nbn_data)
+```
+
+I want to simplify this. For each postcode I simply want to know if any part of it has NBN access.  
+
+
+```{r}
+#  Summarise count of status
+status_nbn <- nbn_data %>%
+  group_by(State, Postcode, Status) %>%
+  tally()
+
+# Simplify status
+status_nbn$simple_status <- ifelse(grepl("Available", status_nbn$Status), "Yes", "No")
+
+# Create NBN ratio
+ratio_nbn <- status_nbn %>%
+  select(State, Postcode, n, simple_status) %>%
+  group_by(State, Postcode, simple_status) %>%
+  summarise(new_n = sum(n)) %>%
+  spread(simple_status, new_n) %>%
+  mutate(total = sum(No, Yes))
+
+# Create NBN score
+ratio_nbn$nbn_score <- ifelse(is.na(ratio_nbn$No), 1.0,
+                              ifelse(is.na(ratio_nbn$Yes), 0, round(ratio_nbn$Yes / ratio_nbn$total, digits = 2)))
+
+
+# Create lookup table
+nbn_lookup <- ratio_nbn %>%
+  select(Postcode, nbn_score)
+```
 
 
 ### The harder way 
 
-Tabula is amazing but still requires a manual intervention, I tried to get something happening more automaically with tm package but couldn't get it to work in a timely manner.  
 ```{r}
-# TODO - figure this out
-```
-
-
-Very useful tutorial on getting info from PDF [here](https://medium.com/@CharlesBordet/how-to-extract-and-clean-data-from-pdf-files-in-r-da11964e252e). 
-
-```{r}
+# Very useful tutorial on getting info from PDF [here](https://medium.com/@CharlesBordet/how-to-extract-and-clean-data-from-pdf-files-in-r-da11964e252e). 
 # # get text mining package
 # install.packages("tm", repos="http://cran.rstudio.com/")
 # library(tm)
@@ -162,33 +187,24 @@ Very useful tutorial on getting info from PDF [here](https://medium.com/@Charles
 # # get pdf tools package
 # install.packages("pdftools", repos="http://cran.rstudio.com/")
 # library(pdftools)
- ```
 
-```{r}
 # read <- readPDF(control = list(text = "-layout"))
 # document <- Corpus(URISource("data_reference/website-communities-table.pdf"), readerControl = list(reader = read))
 # doc <- content(document[[1]])
 # head(doc)
 ```
 
-
-
 ```{r}
 # page_breaks <- grep("\\f", doc)
 # doc[page_breaks[1]]
 ```
 
-There are 245 pages with tabular info that needs to be wrestled into a useful format.  
 ```{r}
 # # Split by new lines
 # doc_split <- strsplit(doc, "\n")
 # doc_split[1]
 
 ```
-
-I'm really only interested in two pieces of information in each line. The first is the postcode, the second is if the word 'Available' occurs. 
-
-Firstly need to split each list into a sublist
 
 ```{r}
 # # Test on one page
@@ -221,12 +237,21 @@ Firstly need to split each list into a sublist
 
 # Creating data frame
 
-Today I will be satisfied with listing, bedrooms, postcode and price only.
+
 
 ```{r}
 df <- names_data %>%
   bind_cols(price_data) %>%
   bind_cols(beds)
+
+df$postcode <- as.integer(df$postcode)
+
+# Join NBN score
+
+df <- df %>%
+  left_join(nbn_lookup, by = c("postcode" = "Postcode"))
+
+df$State <- NULL
 ```
 
 
