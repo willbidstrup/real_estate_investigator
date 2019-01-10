@@ -34,7 +34,7 @@ By using the SelectorGadget to understand the html structure I select the variab
 
 ```{r}
 # Define url base
-url_base <- "https://www.realestate.com.au/rent/with-3-bedrooms-between-300-450-in-adelaide,+sa+5000%3b+glenelg+north,+sa+5045%3b+brighton,+sa+5048%3b+flagstaff+hill,+sa+5159/list-"
+url_base <- "https://www.realestate.com.au/rent/with-3-bedrooms-between-300-450-in-adelaide,+sa+5000%3b+glenelg+north,+sa+5045%3b+brighton,+sa+5048%3b+flagstaff+hill,+sa+5159%3b+glenelg,+sa+5045%3b+glenelg+east,+sa+5045%3b+glenelg+south,+sa+5045%3b+hove,+sa+5048%3b+kingston+park,+sa+5049%3b+seacliff,+sa+5049%3b+edwardstown,+sa+5039%3b+glengowrie,+sa+5044%3b+aldgate,+sa+5154%3b+belair,+sa+5052%3b+mclaren+vale,+sa+5171%3b+blackwood,+sa+5051%3b+lenswood,+sa+5240%3b+gumeracha,+sa+5233%3b+seaford,+sa+5169%3b+alberton,+sa+5014%3b+golden+grove,+sa+5125%3b+tea+tree+gully,+sa+5091%3b+unley,+sa+5061/list-"
 
 ```
 
@@ -43,7 +43,7 @@ url_base <- "https://www.realestate.com.au/rent/with-3-bedrooms-between-300-450-
 # Address
 names_results <- data.frame()
 
-for (i in 1:7)
+for (i in 1:18)
 {
   url_target <- paste0(url_base, i)
   pg <- read_html(url_target)
@@ -61,7 +61,7 @@ for (i in 1:7)
 # Price
 price_results <- data.frame()
 
-for (i in 1:7)
+for (i in 1:18)
 {
   url_target <- paste0(url_base, i)
   pg <- read_html(url_target)
@@ -79,14 +79,14 @@ for (i in 1:7)
 # Beds 
 beds_results <- data.frame()
 
-for (i in 1:7)
+for (i in 1:18)
 {
   url_target <- paste0(url_base, i)
   pg <- read_html(url_target)
  # Beds
   beds_data_html <- html_nodes(pg,'dd') # identify element and pull
   beds_data <- html_text(beds_data_html) # convert to text
-  beds <- as.integer(beds_data[seq(1, length(beds_data), 3)])
+  beds <- as.integer(beds_data[seq(1, length(beds_data), 3)]) # TODO - note that this number is screwed if just one house has a number missing
   beds_data <- as.data.frame(beds) # convert to dataframe
   
   beds_results <- rbind(beds_results, beds_data)
@@ -323,5 +323,11 @@ ggplot(data = new_combined, aes(x = nbn_score, y = price_num)) +
 ```{r}
 ggplot(data = new_combined, aes(y = price_num)) +
   geom_boxplot() 
+```
+
+
+```{r}
+nbn_deals <- new_combined %>%
+  filter(nbn_score >= 0.75)
 ```
 
