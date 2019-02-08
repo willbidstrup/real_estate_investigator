@@ -11,7 +11,7 @@ The objective is to create a data frame that can be used for exploratory analysi
 
 Key variables to gather include;  
 
-- Postcode- 
+- Postcode 
 - Price per week 
 - Number of bedrooms  
 - NBN status
@@ -26,24 +26,23 @@ Key variables to gather include;
 library(tidyverse) # For everything
 library(rvest) # For web scraping
 library(here)
-```
+```       
 
 # Search for variables across multiple pages
 
-By using the SelectorGadget to understand the html structure I select the variables of interest.
-
 ```{r}
 # Define url base
-url_base <- "https://www.realestate.com.au/rent/with-3-bedrooms-between-300-450-in-adelaide,+sa+5000%3b+glenelg+north,+sa+5045%3b+brighton,+sa+5048%3b+flagstaff+hill,+sa+5159/list-"
+url_base <- "https://www.realestate.com.au/rent/with-3-bedrooms-between-300-450-in-adelaide,+sa+5000%3b+lenswood,+sa+5240%3b+balhannah,+sa+5242%3b+stirling,+sa+5152%3b+aldgate,+sa+5154%3b+goodwood,+sa+5034%3b+wayville,+sa+5034%3b+thebarton,+sa+5031%3b+henley+beach,+sa+5022%3b+glenelg,+sa+5045%3b+brighton,+sa+5048%3b+mitcham,+sa+5062%3b+kensington,+sa+5068%3b+tea+tree+gully,+sa+5091/list-"
 
 ```
 
+By using the SelectorGadget to understand the html structure I select the variables of interest.
 
 ```{r}
 # Address
 names_results <- data.frame()
 
-for (i in 1:7)
+for (i in 1:10)
 {
   url_target <- paste0(url_base, i)
   pg <- read_html(url_target)
@@ -61,7 +60,7 @@ for (i in 1:7)
 # Price
 price_results <- data.frame()
 
-for (i in 1:7)
+for (i in 1:10)
 {
   url_target <- paste0(url_base, i)
   pg <- read_html(url_target)
@@ -79,7 +78,7 @@ for (i in 1:7)
 # Beds 
 beds_results <- data.frame()
 
-for (i in 1:7)
+for (i in 1:10)
 {
   url_target <- paste0(url_base, i)
   pg <- read_html(url_target)
@@ -93,6 +92,25 @@ for (i in 1:7)
 }
 
 
+```
+
+Try getting all listing info (a way to account for missing values).  
+
+```{r}
+
+linfo_results <- data.frame()
+
+for (i in 1:10)
+{
+  url_target <- paste0(url_base, i)
+  pg <- read_html(url_target)
+ # Listing info
+  linfo_data_html <- html_nodes(pg,'.listingInfo') # identify element and pull
+  linfo_data <- html_text(linfo_data_html) # convert to text
+  linfo_data <- as.data.frame(linfo_data) # convert to dataframe
+  
+  linfo_results <- rbind(linfo_results, linfo_data)
+}
 ```
 
 
