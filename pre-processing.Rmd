@@ -114,7 +114,42 @@ for (i in 1:10)
 ```
 
 
+
+```{r}
+
+all_results <- data.frame()
+
+for (i in 1:10)
+{
+
+  url_target <- paste0(url_base, i)
+  pg <- read_html(url_target)
+  
+results_data <- pg %>% 
+    html_nodes('.listingInfo') %>%    # select enclosing nodes
+    # iterate over each, pulling out desired parts and coerce to data.frame
+    map_df(~list(names_data = html_nodes(.x, '.name') %>% 
+                     html_text() %>% 
+                     {if(length(.) == 0) NA else .},    # replace length-0 elements with NA
+                 price_data = html_nodes(.x, '.priceText') %>% 
+                     html_text() %>% 
+                     {if(length(.) == 0) NA else .}))
+
+all_results <- rbind(all_results, results_data)
+
+}
+
+
+```
+
+
+
 # Join into master
+
+```{r}
+combined <- all_results
+```
+
 
 ```{r}
 combined <- names_results %>%
@@ -136,7 +171,7 @@ combined$price_num <- substring(combined$price_data, regexpr("[0-9]{3,}", combin
 
 
 # Deal with non numeric
-combined$price_num[price_data$price_num == "NEG"] <- NA
+combined$price_num <- as.integer(combined$price_num )
 
 combined$price_num <- as.integer(combined$price_num)
 ```
@@ -341,5 +376,10 @@ ggplot(data = new_combined, aes(x = nbn_score, y = price_num)) +
 ```{r}
 ggplot(data = new_combined, aes(y = price_num)) +
   geom_boxplot() 
+```
+
+
+```{r}
+write_csv(new_combined, "new_combined.csv")
 ```
 
