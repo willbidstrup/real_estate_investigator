@@ -32,7 +32,8 @@ library(here)
 
 ```{r}
 # Define url base
-url_base <- "https://www.realestate.com.au/rent/with-3-bedrooms-between-300-450-in-adelaide,+sa+5000%3b+lenswood,+sa+5240%3b+balhannah,+sa+5242%3b+stirling,+sa+5152%3b+aldgate,+sa+5154%3b+goodwood,+sa+5034%3b+wayville,+sa+5034%3b+thebarton,+sa+5031%3b+henley+beach,+sa+5022%3b+glenelg,+sa+5045%3b+brighton,+sa+5048%3b+mitcham,+sa+5062%3b+kensington,+sa+5068%3b+tea+tree+gully,+sa+5091/list-"
+url_base <- "https://www.realestate.com.au/rent/with-3-bedrooms-between-300-450-in-adelaide,+sa+5000%3b+glenelg+north,+sa+5045%3b+brighton,+sa+5048%3b+flagstaff+hill,+sa+5159%3b+glenelg,+sa+5045%3b+glenelg+east,+sa+5045%3b+glenelg+south,+sa+5045%3b+hove,+sa+5048%3b+kingston+park,+sa+5049%3b+seacliff,+sa+5049%3b+edwardstown,+sa+5039%3b+glengowrie,+sa+5044%3b+aldgate,+sa+5154%3b+belair,+sa+5052%3b+mclaren+vale,+sa+5171%3b+blackwood,+sa+5051%3b+lenswood,+sa+5240%3b+gumeracha,+sa+5233%3b+seaford,+sa+5169%3b+alberton,+sa+5014%3b+golden+grove,+sa+5125%3b+tea+tree+gully,+sa+5091%3b+unley,+sa+5061/list-"
+
 
 ```
 
@@ -42,7 +43,9 @@ By using the SelectorGadget to understand the html structure I select the variab
 # Address
 names_results <- data.frame()
 
+
 for (i in 1:10)
+
 {
   url_target <- paste0(url_base, i)
   pg <- read_html(url_target)
@@ -61,6 +64,7 @@ for (i in 1:10)
 price_results <- data.frame()
 
 for (i in 1:10)
+
 {
   url_target <- paste0(url_base, i)
   pg <- read_html(url_target)
@@ -78,14 +82,16 @@ for (i in 1:10)
 # Beds 
 beds_results <- data.frame()
 
+
 for (i in 1:10)
+
 {
   url_target <- paste0(url_base, i)
   pg <- read_html(url_target)
  # Beds
   beds_data_html <- html_nodes(pg,'dd') # identify element and pull
   beds_data <- html_text(beds_data_html) # convert to text
-  beds <- as.integer(beds_data[seq(1, length(beds_data), 3)])
+  beds <- as.integer(beds_data[seq(1, length(beds_data), 3)]) # TODO - note that this number is screwed if just one house has a number missing
   beds_data <- as.data.frame(beds) # convert to dataframe
   
   beds_results <- rbind(beds_results, beds_data)
@@ -380,6 +386,11 @@ ggplot(data = new_combined, aes(y = price_num)) +
 
 
 ```{r}
+<<<<<<< HEAD
 write_csv(new_combined, "new_combined.csv")
+=======
+nbn_deals <- new_combined %>%
+  filter(nbn_score >= 0.75)
+>>>>>>> d5292ef8d0c50fc37f2549107ed555ca26d66b6c
 ```
 
